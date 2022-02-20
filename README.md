@@ -8,7 +8,7 @@ It adds several modules to the architecture. It also modifies memory protocol of
 
  1. install CacheRewinder
 
-> scons build/X86_MESI_Two_Level/gem5.opt -j8
+`scons build/X86_MESI_Two_Level/gem5.opt -j8`
 
  2. modify env.sh
  3. run the script ***run_gem5_x86_spec06_benchmark.sh SPEC2006_benchmark***
