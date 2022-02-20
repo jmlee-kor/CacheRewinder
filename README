@@ -1,37 +1,24 @@
-This is the gem5 simulator.
+## CacheRewinder
+This repository contains the [gem5](https://www.gem5.org/) implementation of CacheRewinder, an effective defensive scheme against transient execution attacks.
+CacheRewinder is published on Design, Automation and Test in Europe Conference (**DATE**) ,March 2022.
 
-The main website can be found at http://www.gem5.org
+This implementation is based on gem5 v20.1.0.2 with ruby protocol. 
+It adds several modules to the architecture. It also modifies memory protocol of gem5 simulator.
+### Running CacheRewinder
 
-A good starting point is http://www.gem5.org/about, and for
-more information about building the simulator and getting started
-please see http://www.gem5.org/documentation and
-http://www.gem5.org/documentation/learning_gem5/introduction.
+ 1. install CacheRewinder
 
-To build gem5, you will need the following software: g++ or clang,
-Python (gem5 links in the Python interpreter), SCons, SWIG, zlib, m4,
-and lastly protobuf if you want trace capture and playback
-support. Please see http://www.gem5.org/documentation/general_docs/building
-for more details concerning the minimum versions of the aforementioned tools.
+> scons build/X86_MESI_Two_Level/gem5.opt -j8
 
-Once you have all dependencies resolved, type 'scons
-build/<ARCH>/gem5.opt' where ARCH is one of ARM, NULL, MIPS, POWER, SPARC,
-or X86. This will build an optimized version of the gem5 binary (gem5.opt)
-for the the specified architecture. See
-http://www.gem5.org/documentation/general_docs/building for more details and
-options.
+ 2. modify env.sh
+ 3. run the script ***run_gem5_x86_spec06_benchmark.sh SPEC2006_benchmark***
 
-The basic source release includes these subdirectories:
-   - configs: example simulation configuration scripts
-   - ext: less-common external packages needed to build gem5
-   - src: source code of the gem5 simulator
-   - system: source for some optional system software for simulated systems
-   - tests: regression tests
-   - util: useful utility programs and files
+### Related repositories
 
-To run full-system simulations, you will need compiled system firmware
-(console and PALcode for Alpha), kernel binaries and one or more disk
-images.
+ - InvisiSpec : https://github.com/mjyan0720/InvisiSpec-1.0
+ - CleanupSpec : https://github.com/gururaj-s/cleanupspec
 
-If you have questions, please send mail to gem5-users@gem5.org
-
-Enjoy using gem5 and please share your modifications and extensions.
+### Author
+**Jongmin Lee**
+ - e-mail : flackekd@korea.ac.kr
+ 
