@@ -126,6 +126,12 @@ machine(MachineType:L2Cache, "MESI Directory L2 Cache CMP")
     Exclusive_Unblock, desc="Unblock from L1 requestor";
 
     MEM_Inv, desc="Invalidation from directory";
+
+    //Flush from L1 Cache
+    Flush_Invalidate, desc="Dirty Invalidation due to Flush,from L1";
+    Flush_Invalidate_Clean, desc="Clean Invalidation due to Flush,from L1";
+    Flush_Queue_Pop, desc="Pop L1 Request for Flush, when Line not present in L2";
+
   }
 
   // TYPES
@@ -376,6 +382,24 @@ machine(MachineType:L2Cache, "MESI Directory L2 Cache CMP")
 
         assert(machineIDToMachineType(in_msg.Requestor) == MachineType:L1Cache);
         assert(in_msg.Destination.isElement(machineID));
+
+        //Handle Flush Request from L1.                                                                                                    
+        if(in_msg.Type == CoherenceRequestType:PUTFLUSH){                                                                                   
+          if(is_valid(cache_entry)){                                                                                                        
+            //Proceed with invalidation/replacement followed by ack                                                                         
+            if(isDirty(cache_entry)){                                                                                                       
+              DPRINTF(RubySlicc,"Addr: %#x is Dirty, Flush Invalidate in L2\n",in_msg.addr);                                                  
+              trigger(Event:Flush_Invalidate,in_msg.addr,cache_entry,tbe);                                                                  
+            }                                                                                                                               
+            else{                                                                                                                           
+              DPRINTF(RubySlicc,"Addr: %#x: triggering Flush Invalidate in L2\n",in_msg.addr);                                                
+              trigger(Event:Flush_Invalidate_Clean,in_msg.addr,cache_entry,tbe);                                                            
+            }                                                                                                                               
+          } else {                                                                                                                          
+            DPRINTF(RubySlicc,"Addr: %#x: not present on Flush Invalidate in L2\n",in_msg.addr);                                              
+            trigger(Event:Flush_Queue_Pop,in_msg.addr,cache_entry,tbe);                                                                     
+          }                                                                                                                                 
+        }
 
         if (is_valid(cache_entry)) {
           // The L2 contains the block, so proceeded with handling the request
@@ -798,6 +822,10 @@ machine(MachineType:L2Cache, "MESI Directory L2 Cache CMP")
     wakeUpBuffers(address);
   }
 
+  action(rrq_recycleL1RequestQueue, "\rrq", desc="Recycle incoming L1 request queue") {
+    L1RequestL2Network_in.recycle(clockEdge(), cyclesToTicks(recycle_latency));
+  }
+
   //*****************************************************
   // TRANSITIONS
   //*****************************************************
@@ -1112,4 +1140,64 @@ machine(MachineType:L2Cache, "MESI Directory L2 Cache CMP")
     o_popIncomingResponseQueue;
     kd_wakeUpDependents;
   }
+
+  //Flush Transitions    
+transition({IM, IS, ISS, SS_MB, MT_MB, MT_IIB, MT_IB, MT_SB}, {Flush_Invalidate,  Flush_Invalidate_Clean}) {
+  zz_stallAndWaitL1RequestQueue;
+}
+
+
+transition(SS, Flush_Invalidate, S_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  f_sendInvToSharers;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+
+transition(SS, Flush_Invalidate_Clean, I_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  f_sendInvToSharers;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+
+transition(M, Flush_Invalidate, M_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  c_exclusiveReplacement;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+
+transition(M, Flush_Invalidate_Clean, M_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  c_exclusiveCleanReplacement;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+
+
+transition(MT, Flush_Invalidate, MT_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  f_sendInvToSharers;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+transition(MT, Flush_Invalidate_Clean, MCT_I) {
+  i_allocateTBE;
+  //mti_mark_tbe_InvAckreq;
+  f_sendInvToSharers;
+  rr_deallocateL2CacheBlock;
+  jj_popL1RequestQueue;
+}
+
+transition( {NP, SS, M, MT, M_I, MT_I, MCT_I, I_I, S_I, ISS, IS, IM, SS_MB, MT_MB, MT_IIB, MT_IB, MT_SB, }, Flush_Queue_Pop) {
+  jj_popL1RequestQueue;
+  rrq_recycleL1RequestQueue;
+} 
+
 }

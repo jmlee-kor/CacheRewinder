@@ -882,20 +882,7 @@ $c_ident::collateStats()
         }
     }
 
-    std::cout << "Writeback Count" << std::endl;
-    for (int i=0;i<m_TBEs_ptr->m_writeback_stats.size();i++){
-        std::cout << i << "," << m_TBEs_ptr->m_writeback_stats[i] << std::endl;
-    }
 
-    std::cout << "SPE Count" << std::endl;
-    for (int i=0;i<m_TBEs_ptr->m_index_stats.size();i++){
-        std::cout << i << "," << m_TBEs_ptr->m_index_stats[i] << std::endl;
-    }
-
-    std::cout << "Total Count" << std::endl;
-    for (int i=0;i<m_TBEs_ptr->m_total_stats.size();i++){
-        std::cout << i << "," << m_TBEs_ptr->m_total_stats[i] << std::endl;
-    }
 }
 
 void

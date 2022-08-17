@@ -41,6 +41,7 @@ enumeration(CoherenceRequestType, desc="...") {
 
   DMA_READ, desc="DMA Read";
   DMA_WRITE, desc="DMA Write";
+  PUTFLUSH, desc="Flush L2 Line request from L1";
 }
 
 // CoherenceResponseType

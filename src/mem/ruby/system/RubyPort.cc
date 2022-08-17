@@ -248,11 +248,47 @@ RubyPort::MemResponsePort::recvTimingReq(PacketPtr pkt)
     // ruby doesn't support cache maintenance operations at the
     // moment, as a workaround, we respond right away
     if (pkt->req->isCacheMaintenance()) {
+      /*
         warn_once("Cache maintenance operations are not supported in Ruby.\n");
         pkt->makeResponse();
         schedTimingResp(pkt, curTick());
         return true;
+      */
+
+        // DPRINTF(RubyPort,
+        // "%llu: Cache maintenance operations are not supported in Ruby.\n ",
+        // curTick());
+
+      //Added by Gururaj to make Ruby support Cache-Flushes.
+      //CleanInvalidReq packets changed to FlushReq
+      PacketPtr oldpkt = pkt;
+      if (pkt->cmd == MemCmd::CleanInvalidReq){
+        RequestPtr new_req =
+            std::make_shared<Request>(Request(*(oldpkt->req)));
+        pkt = new Packet(new_req,MemCmd::FlushReq);
+        // Submit the ruby request
+        assert(getOffset(pkt->getAddr()) + pkt->getSize() <=
+               RubySystem::getBlockSizeBytes());
+        RequestStatus requestStatus = ruby_port->makeRequest(pkt);
+        if (requestStatus == RequestStatus_Issued) {
+          pkt->pushSenderState(new SenderState(this));
+          DPRINTF(RubyPort, "Request %s 0x%x issued\n", pkt->cmdString(),
+                  pkt->getAddr());
+        } else {
+          DPRINTF(RubyPort,
+                  "Request for address %#x did not issued because %s\n",
+                  pkt->getAddr(), RequestStatus_to_string(requestStatus));
+          addToRetryList();
+          return false;
+        }
+      }
+
+      //Send response
+      oldpkt->makeResponse();
+      schedTimingResp(oldpkt, curTick());
+      return true;
     }
+
     // Check for pio requests and directly send them to the dedicated
     // pio port.
     if (pkt->cmd != MemCmd::MemSyncReq) {
@@ -408,8 +444,8 @@ RubyPort::MemResponsePort::recvFunctional(PacketPtr pkt)
         // Unless the request port explicitly said otherwise, generate an error
         // if the functional request failed
         if (!accessSucceeded && !pkt->suppressFuncError()) {
-            fatal("Ruby functional %s failed for address %#x\n",
-                  pkt->isWrite() ? "write" : "read", pkt->getAddr());
+            // fatal("Ruby functional %s failed for address %#x\n",
+            //       pkt->isWrite() ? "write" : "read", pkt->getAddr());
         }
 
         // turn packet around to go back to request port if response expected
