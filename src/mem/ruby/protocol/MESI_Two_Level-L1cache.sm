@@ -2009,7 +2009,7 @@ machine(MachineType:L1Cache, "MESI Directory L1 Cache CMP")
     zzm_recycleMandatoryQueue;
   }
  
-  transition(E, Flush_L1L2, M_I) {
+  transition(E, Flush_L1L2, E_I) {
     i_allocateTBE;
     g_issuePUTX;   // putx to convey that we no-longer hold it.
     ff_deallocateL1CacheBlock;
